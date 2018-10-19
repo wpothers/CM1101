@@ -385,6 +385,7 @@ def main():
     while True:
         if len(rooms["Reception"]["items"]) == 6:
             print("CONGRATULATIONS YOU HAVE WON THE GAME!!")
+            exit()
         else:
             # Display game status (room description, inventory etc.)
             print_room(current_room)

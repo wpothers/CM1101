@@ -1,71 +1,103 @@
 #!/usr/bin/python3
 
 from map import rooms
-from string import *
+from player import *
+from items import *
+from gameparser import *
 
 
-def remove_punct(text):
-    """This function is used to remove all punctuation
-    marks from a string. Spaces do not count as punctuation and should
-    not be removed. The funcion takes a string and returns a new string
-    which does not contain any puctuation. For example:
 
-    >>> remove_punct("Hello, World!")
-    'Hello World'
-    >>> remove_punct("-- ...Hey! -- Yes?!...")
-    ' Hey  Yes'
-    >>> remove_punct(",go!So.?uTh")
-    'goSouTh'
-    """
-    return ''.join(character for character in text if character not in punctuation)
-    
-    
-def remove_spaces(text):
-    """This function is used to remove leading and trailing spaces from a string.
-    It takes a string and returns a new string with does not have leading and
-    trailing spaces. For example:
+def list_of_items(items):
+    """This function takes a list of items (see items.py for the definition) and
+    returns a comma-separated list of item names (as a string). For example:
 
-    >>> remove_spaces("  Hello!  ")
-    'Hello!'
-    >>> remove_spaces("  Python  is  easy!   ")
-    'Python  is  easy!'
-    >>> remove_spaces("Python is easy!")
-    'Python is easy!'
-    >>> remove_spaces("")
+    >>> list_of_items([item_pen, item_handbook])
+    'a pen, a student handbook'
+
+    >>> list_of_items([item_id])
+    'id card'
+
+    >>> list_of_items([])
     ''
-    >>> remove_spaces("   ")
-    ''
+
+    >>> list_of_items([item_money, item_handbook, item_laptop])
+    'money, a student handbook, laptop'
+
     """
-    return text.strip()
+    item_list = []
+    index = 0
+    for names in items:
+        names = items[index]
+        name_of_object = names["name"]
+        item_list.append(name_of_object)
+        index += 1
+    comma_seperated = ", ".join(item_list)
+    return comma_seperated
 
 
-def normalise_input(user_input):
-    """This function removes all punctuation, leading and trailing
-    spaces from a string, and converts the string to lower case.
-    For example:
+def print_room_items(room):
+    """This function takes a room as an input and nicely displays a list of items
+    found in this room (followed by a blank line). If there are no items in
+    the room, nothing is printed. See map.py for the definition of a room, and
+    items.py for the definition of an item. This function uses list_of_items()
+    to produce a comma-separated list of item names. For example:
 
-    >>> normalise_input("  Go south! ")
-    'go south'
-    >>> normalise_input("!!! tAkE,. LAmp!?! ")
-    'take lamp'
-    >>> normalise_input("HELP!!!!!!!")
-    'help'
+    >>> print_room_items(rooms["Reception"])
+    There is a pack of biscuits, a student handbook here.
+    <BLANKLINE>
+
+    >>> print_room_items(rooms["Office"])
+    There is a pen here.
+    <BLANKLINE>
+
+    >>> print_room_items(rooms["Admins"])
+
+    (no output)
+
+    Note: <BLANKLINE> here means that doctest should expect a blank line.
+
     """
-    no_punct = remove_punct(user_input)
-    no_space = remove_spaces(no_punct)
-    normalised = no_space.lower()
-    
-    return normalised
+    there_is = ""
+    here = ""
+    items_in_room = room["items"]
+    neat_list = list_of_items(items_in_room)
+    if neat_list != "":
+        there_is = "There is "
+        here = " here.\n"
+    elif neat_list == "":
+        there_is = ""
+        here = ""
+    return_value = there_is + neat_list + here
+    if neat_list != "":
+        print(return_value)
+    elif neat_list == "":
+        return
 
-    
-def display_room(room):
+def print_inventory_items(items):
+    """This function takes a list of inventory items and displays it nicely, in a
+    manner similar to print_room_items(). The only difference is in formatting:
+    print "You have ..." instead of "There is ... here.". For example:
+
+    >>> print_inventory_items(inventory)
+    You have id card, laptop, money.
+    <BLANKLINE>
+
+    """
+    neat_list = list_of_items(items)
+    return_value = "You have " + neat_list + ".\n"
+    print(return_value)
+
+
+def print_room(room):
     """This function takes a room as an input and nicely displays its name
     and description. The room argument is a dictionary with entries "name",
     "description" etc. (see map.py for the definition). The name of the room
     is printed in all capitals and framed by blank lines. Then follows the
-    description of the room and a blank line again. For example:
+    description of the room and a blank line again. If there are any items
+    in the room, the list of items is printed next followed by a blank line
+    (use print_room_items() for this). For example:
 
-    >>> display_room(rooms["Office"])
+    >>> print_room(rooms["Office"])
     <BLANKLINE>
     THE GENERAL OFFICE
     <BLANKLINE>
@@ -74,20 +106,44 @@ def display_room(room):
     in their eyes. If you go west you can return to the
     Queen's Buildings.
     <BLANKLINE>
+    There is a pen here.
+    <BLANKLINE>
+
+    >>> print_room(rooms["Reception"])
+    <BLANKLINE>
+    RECEPTION
+    <BLANKLINE>
+    You are in a maze of twisty little passages, all alike.
+    Next to you is the School of Computer Science and
+    Informatics reception. The receptionist, Matt Strangis,
+    seems to be playing an old school text-based adventure
+    game on his computer. There are corridors leading to the
+    south and east. The exit is to the west.
+    <BLANKLINE>
+    There is a pack of biscuits, a student handbook here.
+    <BLANKLINE>
+
+    >>> print_room(rooms["Admins"])
+    <BLANKLINE>
+    MJ AND SIMON'S ROOM
+    <BLANKLINE>
+    You are leaning agains the door of the systems managers'
+    room. Inside you notice Matt "MJ" John and Simon Jones. They
+    ignore you. To the north is the reception.
+    <BLANKLINE>
 
     Note: <BLANKLINE> here means that doctest should expect a blank line.
     """
-    # pass # The pass statement does nothing. Replace it with the body of your function.
-    room_name = room["name"]
-    room_desc = room["description"]
+    # Display room name
     print()
-    print(room_name.upper())
+    print(room["name"].upper())
     print()
-    print(room_desc)
+    # Display room description
+    print(room["description"])
     print()
-    
-    
-    
+    #Display room items
+    print_room_items(room)
+
 def exit_leads_to(exits, direction):
     """This function takes a dictionary of exits and a direction (a particular
     exit taken from this dictionary). It returns the name of the room into which
@@ -100,60 +156,86 @@ def exit_leads_to(exits, direction):
     >>> exit_leads_to(rooms["Tutor"]["exits"], "west")
     'Reception'
     """
-    #get the name of the room from the input
-    name_of_room = exits.get(direction)
-    #turn the name into the dictionary name using the rooms dictionary
-    dic_name = rooms[name_of_room]
-    #use the dictionary name to find the actual name of the room
-    actual_name = dic_name["name"]
-    return(actual_name)
-    
+    return rooms[exits[direction]]["name"]
 
-def print_menu_line(direction, leads_to):
-    """This function prints a line of a menu of exits. It takes two strings: a
-    direction (the name of an exit) and the name of the room into which it
-    leads (leads_to), and should print a menu line in the following format:
 
-    Go <EXIT NAME UPPERCASE> to <where it leads>.
+def print_exit(direction, leads_to):
+    """This function prints a line of a menu of exits. It takes a direction (the
+    name of an exit) and the name of the room into which it leads (leads_to),
+    and should print a menu line in the following format:
+
+    GO <EXIT NAME UPPERCASE> to <where it leads>.
 
     For example:
-    >>> print_menu_line("east", "you personal tutor's office")
-    Go EAST to you personal tutor's office.
-    >>> print_menu_line("south", "MJ and Simon's room")
-    Go SOUTH to MJ and Simon's room.
+    >>> print_exit("east", "you personal tutor's office")
+    GO EAST to you personal tutor's office.
+    >>> print_exit("south", "MJ and Simon's room")
+    GO SOUTH to MJ and Simon's room.
     """
-    print("Go", direction.upper(), "to", leads_to + ".")
+    print("GO " + direction.upper() + " to " + leads_to + ".")
 
 
-def print_menu(exits):
-    """This function displays the menu of available exits to the player. The
+def print_menu(exits, room_items, inv_items):
+    """This function displays the menu of available actions to the player. The
     argument exits is a dictionary of exits as exemplified in map.py. The
-    menu should, for each exit, call the function print_menu_line() to print
-    the information about each exit in the appropriate format. The room into
-    which an exit leads is obtained using the function exit_leads_to().
+    arguments room_items and inv_items are the items lying around in the room
+    and carried by the player respectively. The menu should, for each exit,
+    call the function print_exit() to print the information about each exit in
+    the appropriate format. The room into which an exit leads is obtained
+    using the function exit_leads_to(). Then, it should print a list of commands
+    related to items: for each item in the room print
 
-    For example, the menu of exits from Reception may look like this:
+    "TAKE <ITEM ID> to take <item name>."
+
+    and for each item in the inventory print
+
+    "DROP <ITEM ID> to drop <item name>."
+
+    For example, the menu of actions available at the Reception may look like this:
 
     You can:
-    Go EAST to your personal tutor's office.
-    Go WEST to the parking lot.
-    Go SOUTH to MJ and Simon's room.
-    Where do you want to go?
+    GO EAST to your personal tutor's office.
+    GO WEST to the parking lot.
+    GO SOUTH to MJ and Simon's room.
+    TAKE BISCUITS to take a pack of biscuits.
+    TAKE HANDBOOK to take a student handbook.
+    DROP ID to drop your id card.
+    DROP LAPTOP to drop your laptop.
+    DROP MONEY to drop your money.
+    What do you want to do?
+
     """
     print("You can:")
-    
-    # COMPLETE THIS PART:
-    # Iterate over available exits:
-    #     and for each exit print the appropriate menu line
+    # Iterate over available exits
     for direction in exits:
-        print_menu_line(direction, exit_leads_to(exits, direction))
+        # Print the exit name and where it leads to
+        print_exit(direction, exit_leads_to(exits, direction))
     
-    print("Where do you want to go?")
+    #Iterate over objects in the room
+    room_index = 0
+    for items in room_items:      
+        room_items = current_room["items"]
+        item_index = room_items[room_index]
+        item_id = item_index["id"]
+        item_name = item_index["name"]
+        print("TAKE", (str(item_id)).upper(), "to take", str(item_name) + ".")
+        room_index += 1
+
+    inven_index = 0
+    for items in inv_items:
+        inven_item_index = inventory[inven_index]
+        inven_item_id = inven_item_index["id"]
+        inven_item_name = inven_item_index["name"]
+        print("DROP", (str(inven_item_id)).upper(), "to drop", str(inven_item_name) + ".")
+        inven_index += 1
+        #print(inven_items)
+    
+    print("What do you want to do?")
 
 
-def is_valid_exit(exits, user_input):
+def is_valid_exit(exits, chosen_exit):
     """This function checks, given a dictionary "exits" (see map.py) and
-    a players's choice "user_input" whether the player has chosen a valid exit.
+    a players's choice "chosen_exit" whether the player has chosen a valid exit.
     It returns True if the exit is valid, and False otherwise. Assume that
     the name of the exit has been normalised by the function normalise_input().
     For example:
@@ -167,42 +249,116 @@ def is_valid_exit(exits, user_input):
     >>> is_valid_exit(rooms["Parking"]["exits"], "east")
     True
     """
-    if user_input in exits.keys():
-        return True
+    return chosen_exit in exits
+
+
+def execute_go(direction):
+    """This function, given the direction (e.g. "south") updates the current room
+    to reflect the movement of the player if the direction is a valid exit
+    (and prints the name of the room into which the player is
+    moving). Otherwise, it prints "You cannot go there."
+    """
+    global current_room
+    if is_valid_exit(current_room["exits"], direction) == True:
+        new_room = move(current_room["exits"], direction)
+        new_room_name = new_room["name"]    
+        print(str(new_room_name))
+        current_room = new_room
     else:
-        return False
+        print("You cannot go there.")
+    
 
 
-def menu(exits):
-    """This function, given a dictionary of possible exits from a room, prints the
-    menu of exits using print_menu() function. It then prompts the player to type
-    a name of an exit where she wants to go. The players's input is normalised
-    using the normalise_input() function before further checks are done.  The
-    function then checks whether this exit is a valid one, using the function
-    is_valid_exit(). If the exit is valid then the function returns the name
-    of the chosen exit. Otherwise the menu is displayed again and the player
-    prompted, repeatedly, until a correct choice is entered."""
+def execute_take(item_id):
+    """This function takes an item_id as an argument and moves this item from the
+    list of items in the current room to the player's inventory. However, if
+    there is no such item in the room, this function prints
+    "You cannot take that."
+    """
+    global weight
+    item_name = items[item_id]
+    item_mass = item_name["mass"]
+    room_items = current_room["items"]
+    if item_name in room_items:
+        if weight <= 3:
+            weight += item_mass
+            room_items.remove(item_name)
+            inventory.append(item_name)
+        elif weight > 3:
+            print("You are carrying too much!")
+    else:
+        print("You cannot take that.")
+    
+    
 
-    # Repeat until the player enter a valid choice
-    while True:
-        
-        # COMPLETE THIS PART:
-        
-        # Display menu
-        print_menu(exits)
-        # Read player's input
-        players_input = input()
-        
-        
-        # Normalise the input
-        normalised = normalise_input(players_input)
-        user_input = normalised[3:]
-        # Check if the input makes sense (is valid exit)
-            # If so, return the player's choice
-        if (is_valid_exit(exits, user_input) == True):
-            return user_input
-        
+def execute_drop(item_id):
+    """This function takes an item_id as an argument and moves this item from the
+    player's inventory to list of items in the current room. However, if there is
+    no such item in the inventory, this function prints "You cannot drop that."
+    """
+    global weight
+    item_name = items[item_id]
+    item_mass = item_name["mass"]
+    room_items = current_room["items"]
+    if item_name in inventory:
+        weight -= item_mass
+        inventory.remove(item_name)
+        room_items.append(item_name)
+    else:
+        print("You cannot drop that.")
+    
 
+def execute_command(command):
+    """This function takes a command (a list of words as returned by
+    normalise_input) and, depending on the type of action (the first word of
+    the command: "go", "take", or "drop"), executes either execute_go,
+    execute_take, or execute_drop, supplying the second word as the argument.
+
+    """
+    if 0 == len(command):
+        return
+
+    if command[0] == "go":
+        if len(command) > 1:
+            execute_go(command[1])
+        else:
+            print("Go where?")
+
+    elif command[0] == "take":
+        if len(command) > 1:
+            execute_take(command[1])
+        else:
+            print("Take what?")
+
+    elif command[0] == "drop":
+        if len(command) > 1:
+            execute_drop(command[1])
+        else:
+            print("Drop what?")
+
+    else:
+        print("This makes no sense.")
+
+
+def menu(exits, room_items, inv_items):
+    """This function, given a dictionary of possible exits from a room, and a list
+    of items found in the room and carried by the player, prints the menu of
+    actions using print_menu() function. It then prompts the player to type an
+    action. The players's input is normalised using the normalise_input()
+    function before being returned.
+
+    """
+
+    # Display menu
+    print_menu(exits, room_items, inv_items)
+
+    # Read player's input
+    user_input = input("> ")
+
+    # Normalise the input
+    normalised_user_input = normalise_input(user_input)
+
+    return normalised_user_input
 
 
 def move(exits, direction):
@@ -217,30 +373,29 @@ def move(exits, direction):
     >>> move(rooms["Reception"]["exits"], "west") == rooms["Office"]
     False
     """
-    new_room = exits.get(direction)
-    dic_name_new_room = rooms.get(new_room)
-    return(dic_name_new_room)
-    
+
+    # Next room to go to
+    return rooms[exits[direction]]
 
 
 # This is the entry point of our program
 def main():
-    # Start game at the reception
-    current_room = rooms["Reception"]
 
     # Main game loop
     while True:
-        # Display game status (room description etc.)
-        display_room(current_room)
+        if len(rooms["Reception"]["items"]) == 6:
+            print("CONGRATULATIONS YOU HAVE WON THE GAME!!")
+        else:
+            # Display game status (room description, inventory etc.)
+            print_room(current_room)
+            print_inventory_items(inventory)
 
-        # What are the possible exits from the current room?
-        exits = current_room["exits"]
+            # Show the menu with possible actions and ask the player
+            command = menu(current_room["exits"], current_room["items"], inventory)
 
-        # Show the menu with exits and ask the player
-        direction = menu(exits)
+            # Execute the player's command
+            execute_command(command)
 
-        # Move the protagonist, i.e. update the current room
-        current_room = move(exits, direction)
 
 
 # Are we being run as a script? If so, run main().
@@ -248,3 +403,4 @@ def main():
 # See https://docs.python.org/3.4/library/__main__.html for explanation
 if __name__ == "__main__":
     main()
+
